@@ -5,11 +5,6 @@ import re
 import time
 import os
 
-# Auto-train if model doesn't exist (for Streamlit Cloud)
-if not os.path.exists('model/news_classifier.pkl'):
-    import subprocess
-    with st.spinner("🔄 First run: Training model... (2-3 mins)"):
-        subprocess.run(['python', 'train.py'])
 
 st.set_page_config(
     page_title="NewsLens — AI Classifier",
@@ -246,9 +241,41 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 @st.cache_resource
 def load_model():
     if not os.path.exists('model/news_classifier.pkl'):
-        import subprocess
-        subprocess.run(['python', 'train.py'], check=True)
+        from datasets import load_dataset
+        import pandas as pd
+        from sklearn.pipeline import Pipeline
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.linear_model import LogisticRegression
+
+        def _clean(text):
+            text = text.lower()
+            text = re.sub(r'[^\w\s]', '', text)
+            return re.sub(r'\s+', ' ', text).strip()
+
+        dataset = load_dataset("ag_news")
+        train_df = pd.DataFrame(dataset['train'])
+        train_df['clean_text'] = train_df['text'].apply(_clean)
+
+        pipe = Pipeline([
+            ('tfidf', TfidfVectorizer(
+                max_features=50000,
+                ngram_range=(1, 2),
+                stop_words='english'
+            )),
+            ('clf', LogisticRegression(
+                max_iter=1000, C=5,
+                solver='lbfgs',
+                multi_class='auto'
+            ))
+        ])
+        pipe.fit(train_df['clean_text'], train_df['label'])
+        os.makedirs('model', exist_ok=True)
+        joblib.dump(pipe, 'model/news_classifier.pkl')
+
     pipeline = joblib.load('model/news_classifier.pkl')
+    with open('model/label_map.json', 'r') as f:
+        raw = json.load(f)
+    return pipeline, {int(k): v for k, v in raw.items()}
     with open('model/label_map.json', 'r') as f:
         raw = json.load(f)
     return pipeline, {int(k): v for k, v in raw.items()}
