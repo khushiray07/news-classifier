@@ -252,6 +252,7 @@ def load_model():
     with open('model/label_map.json', 'r') as f:
         raw = json.load(f)
     return pipeline, {int(k): v for k, v in raw.items()}
+
 pipeline, label_map = load_model()
 
 
