@@ -263,9 +263,9 @@ def load_model():
                 stop_words='english'
             )),
             ('clf', LogisticRegression(
-                max_iter=1000, C=5,
-                solver='lbfgs',
-                multi_class='auto'
+                max_iter=1000,
+                C=5,
+                random_state=42
             ))
         ])
         pipe.fit(train_df['clean_text'], train_df['label'])
