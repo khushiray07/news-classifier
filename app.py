@@ -245,12 +245,15 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 
 @st.cache_resource
 def load_model():
+    if not os.path.exists('model/news_classifier.pkl'):
+        import subprocess
+        subprocess.run(['python', 'train.py'], check=True)
     pipeline = joblib.load('model/news_classifier.pkl')
     with open('model/label_map.json', 'r') as f:
         raw = json.load(f)
     return pipeline, {int(k): v for k, v in raw.items()}
-
 pipeline, label_map = load_model()
+
 
 def clean_text(text):
     text = text.lower()

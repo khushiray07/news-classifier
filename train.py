@@ -1,4 +1,3 @@
-# train.py — Streamlit Cloud will run this to create the model
 from datasets import load_dataset
 import pandas as pd
 import re
@@ -19,9 +18,6 @@ dataset = load_dataset("ag_news")
 train_df = pd.DataFrame(dataset['train'])
 train_df['clean_text'] = train_df['text'].apply(clean_text)
 
-X_train = train_df['clean_text']
-y_train = train_df['label']
-
 print("Training model...")
 pipeline = Pipeline([
     ('tfidf', TfidfVectorizer(
@@ -35,8 +31,8 @@ pipeline = Pipeline([
         multi_class='auto'
     ))
 ])
-pipeline.fit(X_train, y_train)
+pipeline.fit(train_df['clean_text'], train_df['label'])
 
 os.makedirs('model', exist_ok=True)
 joblib.dump(pipeline, 'model/news_classifier.pkl')
-print("Model saved ✅")
+print("Done ✅")
